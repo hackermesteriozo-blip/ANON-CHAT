@@ -1,27 +1,22 @@
+ 
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#090711">
-  <meta name="description" content="ANON CHAT — converse anonimamente em tempo real.">
-  <title>ANON CHAT | Conversas Anônimas</title>
-
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-
+  <meta name="theme-color" content="#090611">
+  <title>ANON CHAT — Converse Anonimamente</title>
   <style>
     :root {
-      --bg: #090711;
-      --panel: #12101e;
-      --panel2: #19152a;
+      color-scheme: dark;
+      --bg: #090611;
+      --panel: #120d20;
+      --panel2: #1a1230;
       --purple: #a855f7;
-      --pink: #e879f9;
-      --text: #f6f2ff;
-      --muted: #9d96b5;
-      --border: rgba(190, 150, 255, .16);
-      --green: #4ade80;
+      --pink: #ec4899;
+      --text: #f5f0ff;
+      --muted: #a69ab9;
+      --border: rgba(190, 140, 255, .18);
     }
 
     * { box-sizing: border-box; }
@@ -30,563 +25,530 @@
       margin: 0;
       min-height: 100vh;
       background:
-        radial-gradient(ellipse at 15% 0%, #32134e55, transparent 45%),
-        radial-gradient(ellipse at 100% 100%, #52156c22, transparent 40%),
+        radial-gradient(ellipse at 15% 10%, #32104c 0, transparent 38%),
+        radial-gradient(ellipse at 90% 90%, #201044 0, transparent 35%),
         var(--bg);
       color: var(--text);
-      font-family: Inter, Arial, sans-serif;
+      font-family: Inter, system-ui, Arial, sans-serif;
     }
 
     button, input { font: inherit; }
     button { cursor: pointer; }
 
-    .app {
-      max-width: 1100px;
-      margin: auto;
-      min-height: 100vh;
-      padding: 24px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    header {
+    .topbar {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding: 12px 0 26px;
+      padding: 18px 6%;
+      border-bottom: 1px solid var(--border);
+      background: rgba(9, 6, 17, .8);
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: 1px;
+      font-weight: 900;
+      letter-spacing: 2px;
     }
 
     .logo {
-      width: 45px;
-      height: 45px;
-      border-radius: 15px;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, var(--purple), #7015c5);
-      box-shadow: 0 0 28px #a855f744;
-      font-size: 24px;
+      width: 42px;
+      height: 42px;
+      border-radius: 13px;
+      background: linear-gradient(135deg, var(--purple), var(--pink));
+      box-shadow: 0 0 25px #a855f755;
+      font-size: 22px;
     }
 
-    .brand span { color: var(--pink); }
+    .brand small {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 10px;
+      letter-spacing: 3px;
+    }
 
     .privacy {
+      color: #d8b4fe;
+      font-size: 12px;
+    }
+
+    main {
+      width: min(1100px, 94%);
+      margin: 36px auto;
+    }
+
+    .hero { text-align: center; margin-bottom: 28px; }
+
+    .hero h1 {
+      margin: 0 0 10px;
+      font-size: clamp(28px, 5vw, 46px);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+    }
+
+    .gradient {
+      color: transparent;
+      background: linear-gradient(90deg, #c084fc, #f0abfc, #f9a8d4);
+      background-clip: text;
+      -webkit-background-clip: text;
+    }
+
+    .hero p { color: var(--muted); margin: 0; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 1fr 270px;
+      gap: 18px;
+    }
+
+    .panel {
+      min-width: 0;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: linear-gradient(145deg, #171023f2, #0e0a18f5);
+      box-shadow: 0 18px 65px #0005;
+      overflow: hidden;
+    }
+
+    .panel-head {
       display: flex;
       align-items: center;
-      gap: 8px;
-      border: 1px solid var(--border);
-      padding: 10px 14px;
-      border-radius: 30px;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 17px 20px;
+      background: #ffffff04;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .panel-head strong { font-size: 14px; }
+
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 7px;
       color: var(--muted);
-      font-size: 12px;
+      font-size: 11px;
     }
 
     .dot {
       width: 8px;
       height: 8px;
-      background: var(--green);
       border-radius: 50%;
-      box-shadow: 0 0 10px #4ade8077;
+      background: #fbbf24;
     }
 
-    main {
-      width: 100%;
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .view { display: none; }
-    .view.active { display: block; }
-
-    .welcome {
-      max-width: 540px;
-      margin: 0 auto;
-      text-align: center;
-      padding: 38px 0;
-    }
-
-    .badge {
-      display: inline-flex;
-      padding: 9px 14px;
-      border-radius: 30px;
-      border: 1px solid #a855f744;
-      background: #a855f711;
-      color: var(--pink);
-      font-size: 12px;
-      font-weight: 600;
-    }
-
-    h1 {
-      font-size: clamp(36px, 7vw, 64px);
-      line-height: 1.08;
-      letter-spacing: -2.5px;
-      margin: 25px 0 18px;
-    }
-
-    h1 span {
-      background: linear-gradient(90deg, #c084fc, #f0abfc);
-      color: transparent;
-      background-clip: text;
-      -webkit-background-clip: text;
-    }
-
-    .subtitle {
-      color: var(--muted);
-      line-height: 1.8;
-      font-size: 15px;
-      max-width: 430px;
-      margin: 0 auto;
-    }
-
-    .login-card {
-      max-width: 430px;
-      width: 100%;
-      margin: 30px auto 0;
-      padding: 25px;
-      background: #12101ee8;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      box-shadow: 0 20px 80px #0004;
-      text-align: left;
-    }
-
-    .login-card label {
-      display: block;
-      margin-bottom: 10px;
-      font-size: 13px;
-      font-weight: 600;
-    }
-
-    .input-wrap { position: relative; }
-
-    input {
-      width: 100%;
-      min-width: 0;
-      color: var(--text);
-      background: #090711;
-      border: 1px solid var(--border);
-      outline: none;
-      padding: 15px;
-      border-radius: 12px;
-      transition: border .2s, box-shadow .2s;
-    }
-
-    input:focus {
-      border-color: var(--purple);
-      box-shadow: 0 0 0 3px #a855f71c;
-    }
-
-    .primary {
-      width: 100%;
-      border: 0;
-      border-radius: 12px;
-      margin-top: 15px;
-      padding: 15px;
-      color: white;
-      font-weight: 700;
-      background: linear-gradient(100deg, #9333ea, #c026d3);
-      box-shadow: 0 8px 25px #a855f72b;
-      transition: transform .2s, opacity .2s;
-    }
-
-    .primary:hover { transform: translateY(-1px); }
-    .primary:disabled { opacity: .55; cursor: wait; }
-
-    .error {
-      display: none;
-      color: #fda4af;
-      font-size: 12px;
-      margin-top: 12px;
-      line-height: 1.6;
-    }
-
-    .hint {
-      text-align: center;
-      color: var(--muted);
-      font-size: 11px;
-      line-height: 1.7;
-      margin: 16px 0 0;
-    }
-
-    .chat {
-      height: min(680px, 75vh);
-      min-height: 420px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      border-radius: 22px;
-      background: #100e1bf2;
-      box-shadow: 0 25px 80px #0005;
-    }
-
-    .chat-head {
-      padding: 18px 20px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      border-bottom: 1px solid var(--border);
-      background: #171326;
-    }
-
-    .room-title { font-weight: 700; }
-    .room-sub { color: var(--muted); font-size: 12px; margin-top: 5px; }
-
-    .leave {
-      border: 1px solid var(--border);
-      color: #d8c8ef;
-      background: transparent;
-      padding: 9px 12px;
-      border-radius: 10px;
-    }
-
-    .leave:hover { background: #a855f71b; }
+    .dot.online { background: #4ade80; box-shadow: 0 0 10px #4ade8088; }
+    .dot.offline { background: #fb7185; }
 
     .messages {
-      flex: 1;
-      overflow-y: auto;
+      height: 420px;
       padding: 20px;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 13px;
+      scrollbar-color: #58347a transparent;
+    }
+
+    .welcome {
+      margin: auto;
+      max-width: 330px;
+      text-align: center;
+      color: var(--muted);
+      line-height: 1.7;
+      font-size: 13px;
+    }
+
+    .welcome .big { display: block; font-size: 38px; margin-bottom: 12px; }
+
+    .message {
+      max-width: 82%;
+      align-self: flex-start;
       overflow-wrap: anywhere;
     }
 
-    .empty {
-      margin: auto;
-      text-align: center;
-      color: var(--muted);
-      line-height: 1.8;
-      font-size: 13px;
-    }
-
-    .message { max-width: 85%; align-self: flex-start; }
     .message.mine { align-self: flex-end; }
 
     .message-meta {
+      display: flex;
+      gap: 9px;
+      align-items: center;
+      margin: 0 5px 5px;
       color: var(--muted);
-      font-size: 11px;
-      margin: 0 0 6px 4px;
+      font-size: 10px;
     }
 
-    .message.mine .message-meta { text-align: right; margin-right: 4px; }
+    .message.mine .message-meta { justify-content: flex-end; }
 
     .bubble {
-      padding: 12px 15px;
-      background: #211a35;
-      border: 1px solid #a855f722;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
       border-radius: 5px 15px 15px 15px;
-      font-size: 14px;
-      line-height: 1.6;
+      background: #211632;
+      line-height: 1.5;
+      font-size: 13px;
       white-space: pre-wrap;
-      overflow-wrap: anywhere;
     }
 
-    .message.mine .bubble {
-      background: linear-gradient(135deg, #7026a7, #552080);
+    .mine .bubble {
+      border-color: #a855f755;
       border-radius: 15px 5px 15px 15px;
+      background: linear-gradient(135deg, #6526a0, #4b1e72);
     }
 
-    .system-message {
+    .system {
       align-self: center;
+      max-width: 95%;
+      padding: 7px 12px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: #ffffff05;
       color: var(--muted);
-      font-size: 11px;
       text-align: center;
-      padding: 8px 12px;
+      font-size: 11px;
     }
 
     .composer {
       display: flex;
       gap: 10px;
-      padding: 16px;
+      padding: 15px;
       border-top: 1px solid var(--border);
-      background: #171326;
     }
 
-    .composer input { flex: 1; }
-    .send {
-      width: 54px;
-      flex-shrink: 0;
+    input {
+      width: 100%;
+      min-width: 0;
+      padding: 13px 14px;
+      border: 1px solid var(--border);
+      outline: none;
+      border-radius: 12px;
+      background: #0b0812;
+      color: var(--text);
+    }
+
+    input:focus { border-color: var(--purple); }
+    input::placeholder { color: #82748f; }
+
+    .btn {
       border: 0;
       border-radius: 12px;
+      padding: 12px 17px;
       color: white;
-      font-size: 20px;
-      background: linear-gradient(135deg, #9333ea, #c026d3);
+      font-weight: 800;
+      background: linear-gradient(135deg, var(--purple), #7c3aed);
+      transition: transform .15s, opacity .15s;
     }
 
-    .status {
+    .btn:hover { transform: translateY(-1px); }
+    .btn:disabled { opacity: .4; cursor: not-allowed; transform: none; }
+
+    .side-content { padding: 20px; }
+
+    .user-card {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 11px;
+      margin-bottom: 18px;
+      padding: 12px;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: #ffffff04;
+    }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #db2777);
+      font-weight: 900;
+    }
+
+    .user-name { font-size: 12px; font-weight: 800; overflow-wrap: anywhere; }
+    .user-label { margin-top: 4px; color: var(--muted); font-size: 10px; }
+
+    .side-title {
+      margin: 20px 0 10px;
       color: var(--muted);
+      font-size: 10px;
+      font-weight: 900;
+      letter-spacing: 1.8px;
+    }
+
+    .feature {
+      display: flex;
+      gap: 10px;
+      margin: 13px 0;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .feature-icon { color: #d8b4fe; }
+
+    .notice {
+      padding: 12px;
+      border: 1px solid #a855f733;
+      border-radius: 12px;
+      background: #a855f70b;
+      color: #c9badb;
       font-size: 11px;
-      padding: 0 17px 14px;
-      background: #171326;
+      line-height: 1.6;
+    }
+
+    .leave {
+      width: 100%;
+      margin-top: 15px;
+      background: transparent;
+      border: 1px solid #fb718544;
+      color: #fda4af;
+    }
+
+    .join-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 5;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      background: #080510eF;
+      backdrop-filter: blur(14px);
+    }
+
+    .join-card {
+      width: min(420px, 100%);
+      padding: 30px;
+      border: 1px solid #b779f455;
+      border-radius: 22px;
+      background: linear-gradient(145deg, #1c112c, #0e0918);
+      box-shadow: 0 0 80px #a855f722;
+    }
+
+    .join-card h2 { margin: 0 0 8px; font-size: 25px; }
+    .join-card p { color: var(--muted); font-size: 13px; line-height: 1.6; }
+    .join-card label { display: block; margin: 20px 0 8px; font-size: 12px; }
+
+    .join-card .btn { width: 100%; margin-top: 13px; }
+
+    .error {
+      min-height: 18px;
+      margin-top: 10px;
+      color: #fda4af;
+      font-size: 12px;
     }
 
     footer {
+      padding: 22px 10px;
+      color: #756985;
       text-align: center;
-      padding: 25px 0 5px;
-      color: #77708e;
       font-size: 11px;
-      line-height: 1.8;
     }
 
-    @media (max-width: 600px) {
-      .app { padding: 14px; }
-      header { padding-bottom: 12px; }
-      .brand { font-size: 16px; }
-      .logo { width: 39px; height: 39px; }
-      .privacy { font-size: 10px; padding: 8px 10px; }
-      h1 { letter-spacing: -1.5px; }
-      .welcome { padding: 24px 0; }
-      .login-card { padding: 20px; }
-      .chat { height: 72vh; min-height: 400px; }
-      .messages { padding: 14px; }
-      .chat-head { padding: 14px; }
-      .composer { padding: 12px; }
+    @media (max-width: 760px) {
+      main { margin-top: 25px; }
+      .layout { grid-template-columns: 1fr; }
+      .messages { height: 52vh; min-height: 300px; }
+      .side-content { padding: 15px; }
+      .side-title { margin-top: 12px; }
+      .privacy { display: none; }
+      .topbar { padding: 14px 4%; }
+      .composer { padding: 10px; }
+      .btn { padding: 12px; }
     }
   </style>
 </head>
-
 <body>
-  <div class="app">
-    <header>
-      <div class="brand">
-        <div class="logo">◈</div>
-        <div>ANON <span>CHAT</span></div>
-      </div>
-      <div class="privacy">
-        <span class="dot"></span>
-        <span>CHAT TEMPORÁRIO</span>
-      </div>
-    </header>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">◈</div>
+      <div>ANON CHAT<small>CONEXÃO ANÔNIMA</small></div>
+    </div>
+    <div class="privacy">✦ Converse sem criar uma conta</div>
+  </header>
 
-    <main>
-      <section id="loginView" class="view active">
-        <div class="welcome">
-          <div class="badge">✦ SEU ESPAÇO ANÔNIMO</div>
-          <h1>Fale livremente.<br><span>Sem revelar quem é.</span></h1>
-          <p class="subtitle">
-            Entre na conversa com um apelido e troque mensagens
-            em tempo real. Sem cadastro de e-mail ou senha.
-          </p>
+  <main>
+    <section class="hero">
+      <h1>Fale livremente.<br><span class="gradient">Seja quem você quiser.</span></h1>
+      <p>Entre na conversa com um apelido e conheça novas pessoas.</p>
+    </section>
 
-          <form id="loginForm" class="login-card">
-            <label for="nickname">Escolha seu apelido</label>
-            <div class="input-wrap">
-              <input
-                id="nickname"
-                name="nickname"
-                type="text"
-                minlength="2"
-                maxlength="24"
-                placeholder="Ex.: Pessoa Misteriosa"
-                autocomplete="off"
-                required
-              >
-            </div>
-            <button id="enterButton" class="primary" type="submit">
-              Entrar no chat &nbsp; →
-            </button>
-            <div id="loginError" class="error" role="alert"></div>
-            <p class="hint">
-              Seu apelido será visível para outros participantes.
-              Não compartilhe informações pessoais.
-            </p>
-          </form>
+    <section class="layout">
+      <div class="panel">
+        <div class="panel-head">
+          <strong>◈ Sala pública</strong>
+          <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">Desconectado</span></div>
         </div>
-      </section>
 
-      <section id="chatView" class="view">
-        <div class="chat">
-          <div class="chat-head">
+        <div id="messages" class="messages" aria-live="polite">
+          <div id="welcome" class="welcome">
+            <span class="big">💬</span>
+            <strong>Seu próximo papo começa aqui.</strong>
+            <br>Entre com um apelido para conversar com quem estiver online.
+          </div>
+        </div>
+
+        <form id="composer" class="composer">
+          <input id="messageInput" maxlength="1000" placeholder="Escreva sua mensagem..." autocomplete="off" disabled>
+          <button id="sendBtn" class="btn" type="submit" disabled>Enviar ➤</button>
+        </form>
+      </div>
+
+      <aside class="panel">
+        <div class="panel-head"><strong>Seu perfil</strong><span>👤</span></div>
+        <div class="side-content">
+          <div class="user-card">
+            <div class="avatar" id="avatar">?</div>
             <div>
-              <div class="room-title">◈ Sala Anônima</div>
-              <div id="connectionText" class="room-sub">Conectando...</div>
-            </div>
-            <button id="leaveButton" class="leave" type="button">
-              Sair
-            </button>
-          </div>
-
-          <div id="messages" class="messages" aria-live="polite">
-            <div id="emptyMessage" class="empty">
-              <div style="font-size:32px;margin-bottom:10px">✧</div>
-              <div>Bem-vindo à sala anônima.</div>
-              <div>Envie uma mensagem para começar.</div>
+              <div class="user-name" id="profileName">Visitante</div>
+              <div class="user-label">Identidade temporária</div>
             </div>
           </div>
 
-          <form id="messageForm" class="composer">
-            <input
-              id="messageInput"
-              type="text"
-              maxlength="1000"
-              placeholder="Escreva uma mensagem..."
-              autocomplete="off"
-              required
-            >
-            <button id="sendButton" class="send" type="submit" aria-label="Enviar mensagem">➤</button>
-          </form>
+          <div class="side-title">SOBRE O CHAT</div>
+          <div class="feature"><span class="feature-icon">✦</span><span>Converse usando um apelido, sem cadastro.</span></div>
+          <div class="feature"><span class="feature-icon">⚡</span><span>Mensagens em tempo real via WebSocket.</span></div>
+          <div class="feature"><span class="feature-icon">◈</span><span>Este site não grava o histórico no navegador.</span></div>
 
-          <div class="status">
-            <span id="statusDot" class="dot"></span>
-            <span id="statusText">Estabelecendo conexão segura...</span>
-          </div>
+          <div class="side-title">PRIVACIDADE</div>
+          <div class="notice">Use um apelido. Não compartilhe senhas, endereço, telefone ou outros dados pessoais. As mensagens podem ser vistas por quem estiver na sala.</div>
+
+          <button id="leaveBtn" class="btn leave" type="button" hidden>Sair da conversa</button>
         </div>
-      </section>
-    </main>
+      </aside>
+    </section>
 
-    <footer>
-      ANON CHAT © 2026 · Conversas temporárias<br>
-      Use com respeito. Não compartilhe dados pessoais.
-    </footer>
+    <footer>ANON CHAT · Converse com respeito · Não compartilhe informações pessoais</footer>
+  </main>
+
+  <div id="joinOverlay" class="join-overlay">
+    <form id="joinForm" class="join-card">
+      <div class="logo">◈</div>
+      <h2>Entre no <span class="gradient">ANON CHAT</span></h2>
+      <p>Escolha um apelido temporário para entrar na sala. Não precisa criar uma conta.</p>
+      <label for="nicknameInput">SEU APELIDO</label>
+      <input id="nicknameInput" maxlength="24" minlength="2" placeholder="Ex.: Sombra123" autocomplete="nickname" required>
+      <button id="joinBtn" class="btn" type="submit">Entrar na conversa →</button>
+      <div id="joinError" class="error" role="alert"></div>
+    </form>
   </div>
 
   <script>
-    /*
-      O frontend se conecta ao servidor WebSocket.
-      Configure a URL abaixo com o endereço do seu Web Service no Render.
-      Exemplo: wss://anon-chat-seunome.onrender.com
-    */
+    // TROQUE PELO ENDEREÇO REAL DO SEU SERVIÇO WEBSOCKET NO RENDER.
+    // Exemplo: https://anon-chat.onrender.com -> wss://anon-chat.onrender.com
     const WS_URL = "wss://SEU-SERVICO.onrender.com";
 
-    const loginView = document.getElementById("loginView");
-    const chatView = document.getElementById("chatView");
-    const loginForm = document.getElementById("loginForm");
-    const nicknameInput = document.getElementById("nickname");
-    const enterButton = document.getElementById("enterButton");
-    const loginError = document.getElementById("loginError");
-    const messages = document.getElementById("messages");
-    const messageForm = document.getElementById("messageForm");
-    const messageInput = document.getElementById("messageInput");
-    const sendButton = document.getElementById("sendButton");
-    const leaveButton = document.getElementById("leaveButton");
-    const connectionText = document.getElementById("connectionText");
-    const statusText = document.getElementById("statusText");
-    const statusDot = document.getElementById("statusDot");
+    const $ = (id) => document.getElementById(id);
+    const messagesEl = $("messages");
+    const joinOverlay = $("joinOverlay");
+    const joinForm = $("joinForm");
+    const nicknameInput = $("nicknameInput");
+    const joinBtn = $("joinBtn");
+    const joinError = $("joinError");
+    const messageInput = $("messageInput");
+    const sendBtn = $("sendBtn");
+    const composer = $("composer");
+    const leaveBtn = $("leaveBtn");
+    const statusDot = $("statusDot");
+    const statusText = $("statusText");
 
-    let socket = null;
+    let ws = null;
     let nickname = "";
-    let connected = false;
+    let joined = false;
+    let manuallyLeaving = false;
+    let reconnectTimer = null;
+    let reconnectAttempts = 0;
 
-    function showView(view) {
-      loginView.classList.toggle("active", view === "login");
-      chatView.classList.toggle("active", view === "chat");
+    function setStatus(state, label) {
+      statusDot.className = "dot" + (state ? " " + state : "");
+      statusText.textContent = label;
     }
 
-    function setConnection(ok, text) {
-      connected = ok;
-      connectionText.textContent = text;
-      statusText.textContent = text;
-      statusDot.style.background = ok ? "#4ade80" : "#fb7185";
-      sendButton.disabled = !ok;
-      messageInput.disabled = !ok;
-      sendButton.style.opacity = ok ? "1" : ".5";
+    function showSystem(text) {
+      const item = document.createElement("div");
+      item.className = "system";
+      item.textContent = String(text);
+      messagesEl.appendChild(item);
+      scrollToBottom();
     }
 
-    function showLoginError(text) {
-      loginError.textContent = text;
-      loginError.style.display = "block";
+    function scrollToBottom() {
+      messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    function addSystemMessage(text) {
-      const element = document.createElement("div");
-      element.className = "system-message";
-      element.textContent = text;
-      messages.appendChild(element);
-      messages.scrollTop = messages.scrollHeight;
+    function removeWelcome() {
+      const welcome = $("welcome");
+      if (welcome) welcome.remove();
     }
 
     function addMessage(data) {
-      const empty = document.getElementById("emptyMessage");
-      if (empty) empty.remove();
+      removeWelcome();
 
-      const isMine = data.nickname === nickname;
       const item = document.createElement("div");
-      item.className = "message" + (isMine ? " mine" : "");
+      const mine = data.nickname === nickname;
+      item.className = "message" + (mine ? " mine" : "");
 
       const meta = document.createElement("div");
       meta.className = "message-meta";
-      meta.textContent = (isMine ? "Você" : data.nickname) +
-        (data.time ? " · " + data.time : "");
+
+      const name = document.createElement("strong");
+      name.textContent = mine ? "Você" : String(data.nickname || "Anônimo");
+
+      const time = document.createElement("span");
+      time.textContent = String(data.time || new Date().toLocaleTimeString("pt-BR", {
+        hour: "2-digit", minute: "2-digit"
+      }));
+
+      meta.append(name, time);
 
       const bubble = document.createElement("div");
       bubble.className = "bubble";
-      bubble.textContent = data.text;
+      bubble.textContent = String(data.text || "");
 
       item.append(meta, bubble);
-      messages.appendChild(item);
-      messages.scrollTop = messages.scrollHeight;
+      messagesEl.appendChild(item);
+      scrollToBottom();
     }
 
-    function closeSocket() {
-      connected = false;
-
-      if (socket) {
-        socket.onopen = null;
-        socket.onmessage = null;
-        socket.onerror = null;
-        socket.onclose = null;
-        if (socket.readyState === WebSocket.OPEN ||
-            socket.readyState === WebSocket.CONNECTING) {
-          socket.close();
-        }
-        socket = null;
-      }
+    function setChatEnabled(enabled) {
+      messageInput.disabled = !enabled;
+      sendBtn.disabled = !enabled;
+      leaveBtn.hidden = !enabled;
+      if (enabled) messageInput.focus();
     }
 
-    function connectChat() {
+    function connect() {
+      if (!nickname) return;
+
       if (WS_URL.includes("SEU-SERVICO")) {
-        showView("login");
-        enterButton.disabled = false;
-        enterButton.textContent = "Entrar no chat →";
-        showLoginError(
-          "Configure WS_URL no final do index.html com a URL real do seu serviço Render."
-        );
+        joinError.textContent = "Configure WS_URL com o endereço do seu servidor Render.";
+        joinOverlay.hidden = false;
         return;
       }
 
-      closeSocket();
-      messages.replaceChildren();
-      addSystemMessage("Conectando à sala...");
+      manuallyLeaving = false;
+      clearTimeout(reconnectTimer);
+      setStatus("", "Conectando...");
 
       try {
-        socket = new WebSocket(WS_URL);
+        ws = new WebSocket(WS_URL);
       } catch {
-        setConnection(false, "Não foi possível iniciar a conexão.");
-        addSystemMessage("Verifique a URL do servidor.");
+        setStatus("offline", "Falha na conexão");
+        scheduleReconnect();
         return;
       }
 
-      setConnection(false, "Conectando ao servidor...");
-
-      socket.addEventListener("open", () => {
-        setConnection(true, "Conectado");
-        addSystemMessage("Você entrou na sala.");
-        messageInput.focus();
-
-        // Compatível com o servidor de exemplo que aceita este evento.
-        socket.send(JSON.stringify({
-          type: "join",
-          nickname: nickname
-        }));
+      ws.addEventListener("open", () => {
+        reconnectAttempts = 0;
+        setStatus("online", "Conectado");
+        ws.send(JSON.stringify({ type: "join", nickname }));
       });
 
-      socket.addEventListener("message", (event) => {
+      ws.addEventListener("message", (event) => {
         let data;
         try {
           data = JSON.parse(event.data);
@@ -594,76 +556,107 @@
           return;
         }
 
-        if (data.type === "message" && typeof data.text === "string") {
+        if (data.type === "system") {
+          showSystem(data.text || "Aviso do servidor");
+        } else if (data.type === "message") {
           addMessage(data);
-        } else if (data.type === "system" && typeof data.text === "string") {
-          addSystemMessage(data.text);
-        } else if (data.type === "error" && typeof data.text === "string") {
-          addSystemMessage(data.text);
+        } else if (data.type === "error") {
+          joinError.textContent = String(data.text || "Não foi possível entrar.");
+          showSystem(data.text || "Erro do servidor");
         }
       });
 
-      socket.addEventListener("error", () => {
-        setConnection(false, "Erro de conexão");
-        addSystemMessage("Não foi possível conectar. Confira o servidor Render.");
+      ws.addEventListener("error", () => {
+        setStatus("offline", "Erro de conexão");
       });
 
-      socket.addEventListener("close", () => {
-        setConnection(false, "Desconectado");
-        if (chatView.classList.contains("active")) {
-          addSystemMessage("Conexão encerrada. Recarregue a página para tentar novamente.");
+      ws.addEventListener("close", () => {
+        setChatEnabled(false);
+        setStatus("offline", "Desconectado");
+
+        if (joined && !manuallyLeaving) {
+          showSystem("Conexão perdida. Tentando reconectar...");
+          scheduleReconnect();
         }
       });
     }
 
-    loginForm.addEventListener("submit", (event) => {
+    function scheduleReconnect() {
+      if (manuallyLeaving || !joined || reconnectTimer) return;
+
+      reconnectAttempts += 1;
+      const delay = Math.min(1000 * (2 ** Math.min(reconnectAttempts, 5)), 30000);
+
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, delay);
+    }
+
+    joinForm.addEventListener("submit", (event) => {
       event.preventDefault();
 
       const value = nicknameInput.value.trim();
       if (value.length < 2 || value.length > 24) {
-        showLoginError("O apelido deve ter entre 2 e 24 caracteres.");
+        joinError.textContent = "O apelido precisa ter entre 2 e 24 caracteres.";
         return;
       }
 
       nickname = value;
-      loginError.style.display = "none";
-      enterButton.disabled = true;
-      enterButton.textContent = "Conectando...";
+      joined = true;
+      joinError.textContent = "";
+      $("profileName").textContent = nickname;
+      $("avatar").textContent = nickname.charAt(0).toUpperCase();
+      joinBtn.disabled = true;
+      joinBtn.textContent = "Conectando...";
 
-      showView("chat");
-      connectChat();
+      connect();
 
-      enterButton.disabled = false;
-      enterButton.textContent = "Entrar no chat →";
+      // Mantém a tela de entrada se o endereço ainda não foi configurado.
+      if (!WS_URL.includes("SEU-SERVICO")) {
+        joinOverlay.hidden = true;
+        setChatEnabled(false);
+      }
+
+      joinBtn.disabled = false;
+      joinBtn.textContent = "Entrar na conversa →";
     });
 
-    messageForm.addEventListener("submit", (event) => {
+    composer.addEventListener("submit", (event) => {
       event.preventDefault();
 
       const text = messageInput.value.trim();
-      if (!text || !connected || !socket ||
-          socket.readyState !== WebSocket.OPEN) return;
+      if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
 
-      socket.send(JSON.stringify({
-        type: "message",
-        nickname: nickname,
-        text: text
-      }));
-
+      ws.send(JSON.stringify({ type: "message", text }));
       messageInput.value = "";
       messageInput.focus();
     });
 
-    leaveButton.addEventListener("click", () => {
-      closeSocket();
+    leaveBtn.addEventListener("click", () => {
+      manuallyLeaving = true;
+      joined = false;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+
+      if (ws) {
+        ws.close();
+        ws = null;
+      }
+
       nickname = "";
+      setChatEnabled(false);
+      setStatus("", "Desconectado");
+      joinOverlay.hidden = false;
+      joinError.textContent = "";
       nicknameInput.value = "";
-      messages.replaceChildren();
-      showView("login");
+      showSystem("Você saiu da conversa.");
     });
 
-    window.addEventListener("pagehide", closeSocket);
+    window.addEventListener("beforeunload", () => {
+      manuallyLeaving = true;
+      if (ws) ws.close();
+    });
   </script>
 </body>
 </html>
-```
