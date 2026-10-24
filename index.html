@@ -1,10 +1,12 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#11101a">
-  <title>ANON CHAT — Converse sem limites</title>
+  <meta name="description" content="ANON CHAT — converse em tempo real.">
+  <title>ANON CHAT — Sua conversa</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -14,59 +16,144 @@
         <div class="brand-mark">A<span>.</span></div>
         <p class="eyebrow">CONEXÃO • COMUNIDADE • CONVERSA</p>
         <h1>Seu espaço.<br><span>Sua conversa.</span></h1>
-        <p class="muted">Converse em tempo real com uma interface moderna, rápida e simples.</p>
-        <div class="feature-pills"><span>● Tempo real</span><span>◈ Conta protegida</span><span>✦ Tema escuro</span></div>
+        <p class="muted">
+          Entre com um nome e converse em tempo real
+          com uma comunidade moderna.
+        </p>
+        <div class="feature-pills">
+          <span>● Tempo real</span>
+          <span>◈ Entrada simples</span>
+          <span>✦ Tema escuro</span>
+        </div>
       </div>
+
       <div class="auth-card">
-        <div class="mobile-brand"><div class="brand-mark">A<span>.</span></div><b>ANON CHAT</b></div>
+        <div class="mobile-brand">
+          <div class="brand-mark">A<span>.</span></div>
+          <b>ANON CHAT</b>
+        </div>
+
         <p class="eyebrow">BEM-VINDO AO ANON CHAT</p>
-        <h2 id="authTitle">Entre na conversa</h2>
-        <p class="muted" id="authSubtitle">Acesse sua conta para continuar.</p>
+        <h2>Entre na conversa</h2>
+        <p class="muted">Escolha como você quer aparecer no chat.</p>
+
         <form id="authForm">
-          <label for="displayName" id="nameLabel" class="hidden">Nome de exibição</label>
-          <input id="displayName" class="hidden" type="text" maxlength="32" autocomplete="nickname" placeholder="Como devemos chamar você?">
-          <label for="email">E-mail</label>
-          <input id="email" type="email" autocomplete="email" required placeholder="voce@exemplo.com">
-          <label for="password">Senha</label>
-          <input id="password" type="password" minlength="6" autocomplete="current-password" required placeholder="Mínimo de 6 caracteres">
-          <button id="submitAuth" class="primary-btn" type="submit">Entrar <span>→</span></button>
+          <label for="displayName">Seu nome</label>
+          <input
+            id="displayName"
+            type="text"
+            maxlength="32"
+            minlength="2"
+            autocomplete="nickname"
+            placeholder="Digite seu nome..."
+            required
+          >
+          <button id="submitAuth" class="primary-btn" type="submit">
+            Entrar no chat <span>→</span>
+          </button>
         </form>
+
         <p id="authError" class="error" role="alert"></p>
-        <p class="switch-auth"><span id="switchText">Ainda não tem conta?</span> <button id="switchMode" class="text-btn" type="button">Criar conta</button></p>
-        <p class="tiny muted">Ao continuar, use uma senha exclusiva para este serviço.</p>
+        <p class="tiny muted">
+          Não informe dados pessoais. Seu nome será exibido nas mensagens.
+        </p>
       </div>
     </section>
 
     <section id="chatView" class="chat-layout hidden">
       <aside class="sidebar">
-        <div class="sidebar-brand"><div class="brand-mark small">A<span>.</span></div><div><b>ANON CHAT</b><small>SEU PONTO DE ENCONTRO</small></div></div>
+        <div class="sidebar-brand">
+          <div class="brand-mark small">A<span>.</span></div>
+          <div>
+            <b>ANON CHAT</b>
+            <small>SEU PONTO DE ENCONTRO</small>
+          </div>
+        </div>
+
         <div class="sidebar-section-title">ESPAÇOS</div>
-        <button class="room active"><span class="hash">#</span><span>geral</span><span class="live-dot"></span></button>
-        <div class="sidebar-note"><span class="status-dot"></span> Conexão em tempo real</div>
+        <button class="room active" type="button">
+          <span class="hash">#</span>
+          <span>geral</span>
+          <span class="live-dot"></span>
+        </button>
+
+        <div class="sidebar-note">
+          <span class="status-dot"></span>
+          Conexão em tempo real
+        </div>
+
         <div class="user-panel">
           <div class="avatar" id="myAvatar">A</div>
-          <div class="user-info"><b id="myName">Usuário</b><small id="myEmail">online</small></div>
-          <button id="logoutBtn" class="icon-btn" title="Sair da conta" aria-label="Sair da conta">↪</button>
+          <div class="user-info">
+            <b id="myName">Usuário</b>
+            <small id="myEmail">Conectado anonimamente</small>
+          </div>
+          <button
+            id="logoutBtn"
+            class="icon-btn"
+            type="button"
+            title="Sair do chat"
+            aria-label="Sair do chat"
+          >↪</button>
         </div>
       </aside>
+
       <section class="conversation">
         <header class="chat-header">
-          <div class="channel-icon">#</div><div><h2>geral</h2><p>Um lugar para todo mundo conversar.</p></div>
-          <div class="header-right"><span class="status-dot"></span><span>AO VIVO</span></div>
+          <div class="channel-icon">#</div>
+          <div>
+            <h2>geral</h2>
+            <p>Um lugar para todo mundo conversar.</p>
+          </div>
+          <div class="header-right">
+            <span class="status-dot"></span>
+            <span>AO VIVO</span>
+          </div>
         </header>
-        <div class="welcome-banner"><div class="welcome-icon">✦</div><div><b>Bem-vindo ao #geral!</b><p>Seja respeitoso, cuide dos seus dados e aproveite a conversa.</p></div></div>
-        <div id="messages" class="messages" aria-live="polite"><div class="empty-state">Carregando mensagens…</div></div>
+
+        <div class="welcome-banner">
+          <div class="welcome-icon">✦</div>
+          <div>
+            <b>Bem-vindo ao #geral!</b>
+            <p>Respeite as pessoas e não compartilhe dados privados.</p>
+          </div>
+        </div>
+
+        <div id="messages" class="messages" aria-live="polite">
+          <div class="empty-state">Carregando mensagens…</div>
+        </div>
+
         <form id="messageForm" class="composer">
-          <button type="button" class="plus-btn" title="Dica" aria-label="Dica" id="tipBtn">+</button>
-          <input id="messageInput" maxlength="1000" autocomplete="off" placeholder="Envie uma mensagem para #geral…" aria-label="Mensagem" required>
+          <button
+            type="button"
+            class="plus-btn"
+            title="Dica de segurança"
+            aria-label="Dica de segurança"
+            id="tipBtn"
+          >+</button>
+
+          <input
+            id="messageInput"
+            maxlength="1000"
+            autocomplete="off"
+            placeholder="Envie uma mensagem para #geral…"
+            aria-label="Mensagem"
+            required
+          >
+
           <span id="charCount" class="char-count">0/1000</span>
           <button class="send-btn" type="submit" aria-label="Enviar mensagem">➤</button>
         </form>
-        <p class="composer-tip" id="composerTip">Enter para enviar • Seja gentil com as outras pessoas.</p>
+
+        <p class="composer-tip">
+          Enter para enviar • Seja gentil com as outras pessoas.
+        </p>
       </section>
     </section>
+
     <div id="toast" class="toast" role="status"></div>
   </main>
+
   <script type="module" src="./app.js"></script>
 </body>
 </html>
