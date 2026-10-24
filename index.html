@@ -5,13 +5,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#090611">
-  <title>ANON CHAT — Converse Anonimamente</title>
+  <meta name="description" content="ANON CHAT — Converse em tempo real usando um apelido.">
+  <title>ANON CHAT — Conversa Anônima</title>
+
   <style>
     :root {
       color-scheme: dark;
       --bg: #090611;
-      --panel: #120d20;
-      --panel2: #1a1230;
+      --panel: #130d20;
       --purple: #a855f7;
       --pink: #ec4899;
       --text: #f5f0ff;
@@ -39,9 +40,9 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 18px 6%;
+      padding: 17px 6%;
       border-bottom: 1px solid var(--border);
-      background: rgba(9, 6, 17, .8);
+      background: rgba(9, 6, 17, .85);
     }
 
     .brand {
@@ -55,8 +56,8 @@
     .logo {
       display: grid;
       place-items: center;
-      width: 42px;
-      height: 42px;
+      width: 43px;
+      height: 43px;
       border-radius: 13px;
       background: linear-gradient(135deg, var(--purple), var(--pink));
       box-shadow: 0 0 25px #a855f755;
@@ -71,10 +72,7 @@
       letter-spacing: 3px;
     }
 
-    .privacy {
-      color: #d8b4fe;
-      font-size: 12px;
-    }
+    .privacy { color: #d8b4fe; font-size: 12px; }
 
     main {
       width: min(1100px, 94%);
@@ -101,7 +99,7 @@
 
     .layout {
       display: grid;
-      grid-template-columns: 1fr 270px;
+      grid-template-columns: minmax(0, 1fr) 270px;
       gap: 18px;
     }
 
@@ -316,9 +314,11 @@
       display: grid;
       place-items: center;
       padding: 20px;
-      background: #080510eF;
+      background: #080510ef;
       backdrop-filter: blur(14px);
     }
+
+    .join-overlay[hidden] { display: none; }
 
     .join-card {
       width: min(420px, 100%);
@@ -362,6 +362,7 @@
     }
   </style>
 </head>
+
 <body>
   <header class="topbar">
     <div class="brand">
@@ -381,7 +382,10 @@
       <div class="panel">
         <div class="panel-head">
           <strong>◈ Sala pública</strong>
-          <div class="status"><span id="statusDot" class="dot"></span><span id="statusText">Desconectado</span></div>
+          <div class="status">
+            <span id="statusDot" class="dot"></span>
+            <span id="statusText">Desconectado</span>
+          </div>
         </div>
 
         <div id="messages" class="messages" aria-live="polite">
@@ -393,7 +397,9 @@
         </div>
 
         <form id="composer" class="composer">
-          <input id="messageInput" maxlength="1000" placeholder="Escreva sua mensagem..." autocomplete="off" disabled>
+          <input id="messageInput" maxlength="1000"
+            placeholder="Escreva sua mensagem..."
+            autocomplete="off" disabled>
           <button id="sendBtn" class="btn" type="submit" disabled>Enviar ➤</button>
         </form>
       </div>
@@ -412,17 +418,20 @@
           <div class="side-title">SOBRE O CHAT</div>
           <div class="feature"><span class="feature-icon">✦</span><span>Converse usando um apelido, sem cadastro.</span></div>
           <div class="feature"><span class="feature-icon">⚡</span><span>Mensagens em tempo real via WebSocket.</span></div>
-          <div class="feature"><span class="feature-icon">◈</span><span>Este site não grava o histórico no navegador.</span></div>
+          <div class="feature"><span class="feature-icon">◈</span><span>Esta página não grava o histórico no navegador.</span></div>
 
           <div class="side-title">PRIVACIDADE</div>
-          <div class="notice">Use um apelido. Não compartilhe senhas, endereço, telefone ou outros dados pessoais. As mensagens podem ser vistas por quem estiver na sala.</div>
+          <div class="notice">
+            Use um apelido e não compartilhe senhas, endereço ou telefone.
+            As mensagens podem ser vistas por quem estiver na sala.
+          </div>
 
           <button id="leaveBtn" class="btn leave" type="button" hidden>Sair da conversa</button>
         </div>
       </aside>
     </section>
 
-    <footer>ANON CHAT · Converse com respeito · Não compartilhe informações pessoais</footer>
+    <footer>ANON CHAT · Converse com respeito · Proteja seus dados pessoais</footer>
   </main>
 
   <div id="joinOverlay" class="join-overlay">
@@ -431,16 +440,16 @@
       <h2>Entre no <span class="gradient">ANON CHAT</span></h2>
       <p>Escolha um apelido temporário para entrar na sala. Não precisa criar uma conta.</p>
       <label for="nicknameInput">SEU APELIDO</label>
-      <input id="nicknameInput" maxlength="24" minlength="2" placeholder="Ex.: Sombra123" autocomplete="nickname" required>
+      <input id="nicknameInput" maxlength="24" minlength="2"
+        placeholder="Ex.: Sombra123" autocomplete="nickname" required>
       <button id="joinBtn" class="btn" type="submit">Entrar na conversa →</button>
       <div id="joinError" class="error" role="alert"></div>
     </form>
   </div>
 
   <script>
-    // TROQUE PELO ENDEREÇO REAL DO SEU SERVIÇO WEBSOCKET NO RENDER.
-    // Exemplo: https://anon-chat.onrender.com -> wss://anon-chat.onrender.com
-    const WS_URL = "wss://SEU-SERVICO.onrender.com";
+    // URL REAL DO SEU SERVIÇO RENDER
+    const WS_URL = "wss://anon-chat-n94y.onrender.com";
 
     const $ = (id) => document.getElementById(id);
     const messagesEl = $("messages");
@@ -462,18 +471,11 @@
     let manuallyLeaving = false;
     let reconnectTimer = null;
     let reconnectAttempts = 0;
+    let connectionId = 0;
 
     function setStatus(state, label) {
       statusDot.className = "dot" + (state ? " " + state : "");
       statusText.textContent = label;
-    }
-
-    function showSystem(text) {
-      const item = document.createElement("div");
-      item.className = "system";
-      item.textContent = String(text);
-      messagesEl.appendChild(item);
-      scrollToBottom();
     }
 
     function scrollToBottom() {
@@ -483,6 +485,15 @@
     function removeWelcome() {
       const welcome = $("welcome");
       if (welcome) welcome.remove();
+    }
+
+    function showSystem(text) {
+      removeWelcome();
+      const item = document.createElement("div");
+      item.className = "system";
+      item.textContent = String(text);
+      messagesEl.appendChild(item);
+      scrollToBottom();
     }
 
     function addMessage(data) {
@@ -500,7 +511,8 @@
 
       const time = document.createElement("span");
       time.textContent = String(data.time || new Date().toLocaleTimeString("pt-BR", {
-        hour: "2-digit", minute: "2-digit"
+        hour: "2-digit",
+        minute: "2-digit"
       }));
 
       meta.append(name, time);
@@ -521,17 +533,25 @@
       if (enabled) messageInput.focus();
     }
 
+    function scheduleReconnect() {
+      if (manuallyLeaving || !joined || reconnectTimer) return;
+
+      reconnectAttempts += 1;
+      const delay = Math.min(1000 * (2 ** Math.min(reconnectAttempts, 5)), 30000);
+
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, delay);
+    }
+
     function connect() {
-      if (!nickname) return;
+      if (!nickname || manuallyLeaving) return;
 
-      if (WS_URL.includes("SEU-SERVICO")) {
-        joinError.textContent = "Configure WS_URL com o endereço do seu servidor Render.";
-        joinOverlay.hidden = false;
-        return;
-      }
-
-      manuallyLeaving = false;
+      const thisConnection = ++connectionId;
       clearTimeout(reconnectTimer);
+      reconnectTimer = null;
+      setChatEnabled(false);
       setStatus("", "Conectando...");
 
       try {
@@ -542,13 +562,31 @@
         return;
       }
 
-      ws.addEventListener("open", () => {
+      const currentSocket = ws;
+
+      currentSocket.addEventListener("open", () => {
+        if (thisConnection !== connectionId) {
+          currentSocket.close();
+          return;
+        }
+
         reconnectAttempts = 0;
         setStatus("online", "Conectado");
-        ws.send(JSON.stringify({ type: "join", nickname }));
+
+        currentSocket.send(JSON.stringify({
+          type: "join",
+          nickname: nickname
+        }));
+
+        setChatEnabled(true);
+        joinOverlay.hidden = true;
+        joinBtn.disabled = false;
+        joinBtn.textContent = "Entrar na conversa →";
       });
 
-      ws.addEventListener("message", (event) => {
+      currentSocket.addEventListener("message", (event) => {
+        if (thisConnection !== connectionId) return;
+
         let data;
         try {
           data = JSON.parse(event.data);
@@ -566,11 +604,15 @@
         }
       });
 
-      ws.addEventListener("error", () => {
-        setStatus("offline", "Erro de conexão");
+      currentSocket.addEventListener("error", () => {
+        if (thisConnection === connectionId) {
+          setStatus("offline", "Erro de conexão");
+        }
       });
 
-      ws.addEventListener("close", () => {
+      currentSocket.addEventListener("close", () => {
+        if (thisConnection !== connectionId) return;
+
         setChatEnabled(false);
         setStatus("offline", "Desconectado");
 
@@ -581,22 +623,11 @@
       });
     }
 
-    function scheduleReconnect() {
-      if (manuallyLeaving || !joined || reconnectTimer) return;
-
-      reconnectAttempts += 1;
-      const delay = Math.min(1000 * (2 ** Math.min(reconnectAttempts, 5)), 30000);
-
-      reconnectTimer = setTimeout(() => {
-        reconnectTimer = null;
-        connect();
-      }, delay);
-    }
-
     joinForm.addEventListener("submit", (event) => {
       event.preventDefault();
 
       const value = nicknameInput.value.trim();
+
       if (value.length < 2 || value.length > 24) {
         joinError.textContent = "O apelido precisa ter entre 2 e 24 caracteres.";
         return;
@@ -604,6 +635,9 @@
 
       nickname = value;
       joined = true;
+      manuallyLeaving = false;
+      reconnectAttempts = 0;
+
       joinError.textContent = "";
       $("profileName").textContent = nickname;
       $("avatar").textContent = nickname.charAt(0).toUpperCase();
@@ -611,24 +645,20 @@
       joinBtn.textContent = "Conectando...";
 
       connect();
-
-      // Mantém a tela de entrada se o endereço ainda não foi configurado.
-      if (!WS_URL.includes("SEU-SERVICO")) {
-        joinOverlay.hidden = true;
-        setChatEnabled(false);
-      }
-
-      joinBtn.disabled = false;
-      joinBtn.textContent = "Entrar na conversa →";
     });
 
     composer.addEventListener("submit", (event) => {
       event.preventDefault();
 
       const text = messageInput.value.trim();
+
       if (!text || !ws || ws.readyState !== WebSocket.OPEN) return;
 
-      ws.send(JSON.stringify({ type: "message", text }));
+      ws.send(JSON.stringify({
+        type: "message",
+        text: text
+      }));
+
       messageInput.value = "";
       messageInput.focus();
     });
@@ -636,6 +666,7 @@
     leaveBtn.addEventListener("click", () => {
       manuallyLeaving = true;
       joined = false;
+      connectionId++;
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
 
@@ -650,6 +681,8 @@
       joinOverlay.hidden = false;
       joinError.textContent = "";
       nicknameInput.value = "";
+      joinBtn.disabled = false;
+      joinBtn.textContent = "Entrar na conversa →";
       showSystem("Você saiu da conversa.");
     });
 
