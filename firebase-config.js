@@ -1,6 +1,6 @@
 
 export const firebaseConfig = {
-  apiKey: "BNns3yXFkVdudQFWIBU2p-XRg0ECSqKGGaaNQeGRCwJJtX0RGFpSWQ-Rm3tvjObdQnYjWGOycL4cA9yGMYuPu5U",
+  apiKey: "GfzC6_hyPXG29evoP0y7gZbUN5y2W1cPEhpkc0UR_jML",
   authDomain: "misterio-be0c2.firebaseapp.com",
   projectId: "misterio-be0c2",
   storageBucket: "misterio-be0c2.firebasestorage.app",
