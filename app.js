@@ -1,543 +1,426 @@
+"use strict";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+/*
+ * ANON CHAT — APP.JS
+ * Chat temporário via WebSocket.
+ * Não usa Firebase nem grava mensagens no navegador.
+ *
+ * IMPORTANTE:
+ * O servidor Render deve aceitar os eventos "join" e "message"
+ * e retransmitir as mensagens aos outros usuários da sala.
+ */
 
-import {
-  getAuth,
-  onAuthStateChanged,
-  signInAnonymously,
-  updateProfile,
-  signOut
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-
-import {
-  getFirestore,
-  collection,
-  addDoc,
-  query,
-  orderBy,
-  limit,
-  onSnapshot,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
-
-import { firebaseConfig } from "./firebase-config.js";
-
-// ======================================================
-// ANON CHAT — CONFIGURAÇÃO PRINCIPAL
-// ======================================================
+const WS_URL = "wss://SEU-SERVICO.onrender.com";
+const MAX_MESSAGE_LENGTH = 1000;
+const MAX_NICKNAME_LENGTH = 24;
+const MIN_NICKNAME_LENGTH = 2;
 
 const $ = (id) => document.getElementById(id);
 
-const authView = $("authView");
+const loginView = $("loginView");
 const chatView = $("chatView");
-const authForm = $("authForm");
-const authError = $("authError");
-const displayName = $("displayName");
-const submitAuth = $("submitAuth");
+const loginForm = $("loginForm");
+const nicknameInput = $("nickname");
+const enterButton = $("enterButton");
+const loginError = $("loginError");
 
-const messagesEl = $("messages");
+const messages = $("messages");
 const messageForm = $("messageForm");
 const messageInput = $("messageInput");
-const charCount = $("charCount");
-const toast = $("toast");
+const sendButton = $("sendButton");
+const leaveButton = $("leaveButton");
 
-let app;
-let auth;
-let db;
+const connectionText = $("connectionText");
+const statusText = $("statusText");
+const statusDot = $("statusDot");
 
-let stopMessages = null;
-let seenInitialSnapshot = false;
-let toastTimer = null;
-let entering = false;
-let activeUid = null;
+let socket = null;
+let nickname = "";
+let connected = false;
+let manuallyDisconnected = false;
+let reconnectTimer = null;
+let connectionAttempts = 0;
 
-// ======================================================
-// CONFIGURAÇÃO DO FIREBASE
-// ======================================================
-
-function configIsMissing() {
-  return !firebaseConfig ||
-    !firebaseConfig.apiKey ||
-    firebaseConfig.apiKey === "SUA_API_KEY" ||
-    firebaseConfig.apiKey.includes("COLE_") ||
-    !firebaseConfig.authDomain ||
-    !firebaseConfig.projectId ||
-    firebaseConfig.projectId === "SEU-PROJETO" ||
-    !firebaseConfig.appId;
+/* Exibe a tela escolhida. */
+function showView(view) {
+  loginView?.classList.toggle("active", view === "login");
+  chatView?.classList.toggle("active", view === "chat");
 }
 
-// ======================================================
-// UTILITÁRIOS
-// ======================================================
+/* Atualiza o estado visual da conexão. */
+function setConnection(isConnected, text) {
+  connected = isConnected;
 
-function showToast(message) {
-  if (!toast) return;
+  if (connectionText) connectionText.textContent = text;
+  if (statusText) statusText.textContent = text;
 
-  toast.textContent = message;
-  toast.classList.add("show");
+  if (statusDot) {
+    statusDot.style.background = isConnected ? "#4ade80" : "#fb7185";
+  }
 
-  clearTimeout(toastTimer);
+  if (sendButton) sendButton.disabled = !isConnected;
+  if (messageInput) messageInput.disabled = !isConnected;
 
-  toastTimer = setTimeout(() => {
-    toast.classList.remove("show");
-  }, 3000);
-}
-
-function friendlyError(error) {
-  const errors = {
-    "auth/operation-not-allowed":
-      "Ative o login anônimo no Firebase Authentication.",
-
-    "auth/network-request-failed":
-      "Falha de conexão. Verifique sua internet.",
-
-    "auth/too-many-requests":
-      "Muitas tentativas. Aguarde um pouco.",
-
-    "auth/unauthorized-domain":
-      "Adicione o domínio do site em Authentication → Settings → Authorized domains.",
-
-    "permission-denied":
-      "O Firestore bloqueou a operação. Confira as regras de segurança.",
-
-    "unavailable":
-      "O serviço está temporariamente indisponível.",
-
-    "failed-precondition":
-      "O Firestore precisa de configuração adicional."
-  };
-
-  return errors[error?.code] ||
-    error?.message ||
-    "Não foi possível concluir a operação.";
-}
-
-function initials(name) {
-  return (name || "A").trim().slice(0, 1).toUpperCase();
-}
-
-function safeText(value) {
-  return String(value ?? "");
-}
-
-function validName(value) {
-  const name = value.trim();
-  return name.length >= 2 && name.length <= 32;
-}
-
-function getSavedName() {
-  try {
-    return sessionStorage.getItem("anonChatName") || "";
-  } catch {
-    return "";
+  if (sendButton) {
+    sendButton.style.opacity = isConnected ? "1" : ".5";
   }
 }
 
-function saveName(name) {
-  try {
-    sessionStorage.setItem("anonChatName", name);
-  } catch {
-    // O chat continua funcionando mesmo se o armazenamento estiver indisponível.
-  }
+/* Mostra um erro na tela de entrada. */
+function showLoginError(text) {
+  if (!loginError) return;
+
+  loginError.textContent = text;
+  loginError.style.display = "block";
 }
 
-function clearSavedName() {
-  try {
-    sessionStorage.removeItem("anonChatName");
-  } catch {
-    // Não há nada a fazer.
-  }
+/* Cria um aviso de sistema sem interpretar HTML. */
+function addSystemMessage(text) {
+  if (!messages) return;
+
+  const element = document.createElement("div");
+  element.className = "system-message";
+  element.textContent = text;
+
+  messages.appendChild(element);
+  scrollToBottom();
 }
 
-// ======================================================
-// NAVEGAÇÃO ENTRE ENTRADA E CHAT
-// ======================================================
+/* Cria uma mensagem de usuário com texto seguro. */
+function addMessage(data) {
+  if (!messages) return;
 
-function showLogin() {
-  stopMessageListener();
+  const empty = $("emptyMessage");
+  if (empty) empty.remove();
 
-  activeUid = null;
+  const item = document.createElement("div");
+  const isMine = data.nickname === nickname;
 
-  chatView.classList.add("hidden");
-  authView.classList.remove("hidden");
-
-  messagesEl.replaceChildren();
-
-  submitAuth.disabled = false;
-  submitAuth.innerHTML = 'Entrar no chat <span>→</span>';
-
-  if (displayName && !displayName.value) {
-    displayName.focus();
-  }
-}
-
-function showChat(user) {
-  if (!user) return;
-
-  activeUid = user.uid;
-
-  const name = user.displayName || getSavedName() || "Usuário";
-
-  authView.classList.add("hidden");
-  chatView.classList.remove("hidden");
-
-  $("myName").textContent = name;
-  $("myAvatar").textContent = initials(name);
-
-  const userStatus = $("myEmail");
-  if (userStatus) {
-    userStatus.textContent = "Conectado anonimamente";
-  }
-
-  startMessages(user);
-
-  messageInput.focus();
-}
-
-// ======================================================
-// RENDERIZAÇÃO DAS MENSAGENS
-// ======================================================
-
-function renderMessage(data, uid) {
-  const row = document.createElement("article");
-
-  row.className =
-    "message" + (data.uid === uid ? " mine" : "");
-
-  const avatar = document.createElement("div");
-  avatar.className = "avatar";
-  avatar.textContent = initials(data.name);
-
-  const body = document.createElement("div");
-  body.className = "message-body";
+  item.className = "message" + (isMine ? " mine" : "");
 
   const meta = document.createElement("div");
   meta.className = "message-meta";
 
-  const author = document.createElement("b");
-  author.textContent = safeText(data.name) || "Usuário";
+  const sender = isMine ? "Você" : String(data.nickname || "Anônimo");
+  const time = typeof data.time === "string" ? data.time : "";
 
-  const time = document.createElement("time");
+  meta.textContent = time ? `${sender} · ${time}` : sender;
 
-  if (data.createdAt?.toDate) {
-    const date = data.createdAt.toDate();
+  const bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.textContent = String(data.text || "");
 
-    time.dateTime = date.toISOString();
+  item.append(meta, bubble);
+  messages.appendChild(item);
 
-    time.textContent = date.toLocaleTimeString("pt-BR", {
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  } else {
-    time.textContent = "agora";
-  }
-
-  const text = document.createElement("p");
-  text.className = "message-text";
-  text.textContent = safeText(data.text);
-
-  meta.append(author, time);
-  body.append(meta, text);
-  row.append(avatar, body);
-
-  return row;
+  scrollToBottom();
 }
 
-// ======================================================
-// MENSAGENS EM TEMPO REAL
-// ======================================================
-
-function stopMessageListener() {
-  if (stopMessages) {
-    stopMessages();
-    stopMessages = null;
-  }
-
-  seenInitialSnapshot = false;
+/* Mantém a conversa na mensagem mais recente. */
+function scrollToBottom() {
+  if (messages) messages.scrollTop = messages.scrollHeight;
 }
 
-function startMessages(user) {
-  if (!user || activeUid !== user.uid) return;
+/* Cancela uma tentativa de reconexão pendente. */
+function clearReconnectTimer() {
+  if (reconnectTimer !== null) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
 
-  stopMessageListener();
+/* Fecha a conexão atual e remove os eventos. */
+function closeSocket() {
+  clearReconnectTimer();
+  connected = false;
 
-  messagesEl.replaceChildren();
+  if (!socket) return;
 
-  const loading = document.createElement("div");
-  loading.className = "empty-state";
-  loading.textContent = "Conectando à conversa…";
+  const oldSocket = socket;
+  socket = null;
 
-  messagesEl.append(loading);
+  oldSocket.onopen = null;
+  oldSocket.onmessage = null;
+  oldSocket.onerror = null;
+  oldSocket.onclose = null;
 
-  const messagesQuery = query(
-    collection(db, "messages"),
-    orderBy("createdAt", "asc"),
-    limit(200)
-  );
+  if (
+    oldSocket.readyState === WebSocket.OPEN ||
+    oldSocket.readyState === WebSocket.CONNECTING
+  ) {
+    oldSocket.close(1000, "Conexão encerrada");
+  }
+}
 
-  stopMessages = onSnapshot(
-    messagesQuery,
+/* Interpreta os eventos recebidos do servidor. */
+function handleServerMessage(event) {
+  let data;
 
-    (snapshot) => {
-      if (!auth.currentUser ||
-          auth.currentUser.uid !== user.uid) {
-        return;
-      }
+  try {
+    data = JSON.parse(event.data);
+  } catch {
+    return;
+  }
 
-      const nearBottom =
-        messagesEl.scrollHeight -
-        messagesEl.scrollTop -
-        messagesEl.clientHeight < 100;
+  if (!data || typeof data !== "object") return;
 
-      messagesEl.replaceChildren();
+  switch (data.type) {
+    case "message": {
+      if (typeof data.text !== "string") return;
 
-      if (snapshot.empty) {
-        const empty = document.createElement("div");
+      if (data.text.length > MAX_MESSAGE_LENGTH) return;
 
-        empty.className = "empty-state";
-        empty.textContent =
-          "Ainda não há mensagens. Comece a conversa! ✦";
+      addMessage({
+        nickname: String(data.nickname || "Anônimo").slice(
+          0,
+          MAX_NICKNAME_LENGTH
+        ),
+        text: data.text,
+        time: data.time
+      });
 
-        messagesEl.append(empty);
-      } else {
-        snapshot.forEach((item) => {
-          messagesEl.append(
-            renderMessage(item.data(), user.uid)
-          );
-        });
-      }
-
-      if (nearBottom || !seenInitialSnapshot) {
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-      }
-
-      seenInitialSnapshot = true;
-    },
-
-    (error) => {
-      messagesEl.replaceChildren();
-
-      const errorMessage = document.createElement("div");
-      errorMessage.className = "empty-state";
-      errorMessage.textContent =
-        "Não foi possível carregar as mensagens.";
-
-      messagesEl.append(errorMessage);
-      showToast(friendlyError(error));
+      break;
     }
-  );
+
+    case "system": {
+      if (typeof data.text === "string") {
+        addSystemMessage(data.text.slice(0, 200));
+      }
+      break;
+    }
+
+    case "error": {
+      if (typeof data.text === "string") {
+        addSystemMessage(data.text.slice(0, 200));
+      }
+      break;
+    }
+
+    case "history": {
+      /*
+       * Este aplicativo não solicita histórico.
+       * Se o servidor enviar mensagens antigas, elas são ignoradas.
+       */
+      break;
+    }
+
+    default:
+      break;
+  }
 }
 
-// ======================================================
-// ENTRAR APENAS COM O NOME
-// ======================================================
+/* Abre a conexão com o servidor WebSocket. */
+function connectChat() {
+  manuallyDisconnected = false;
+  clearReconnectTimer();
+  closeSocket();
 
-authForm.addEventListener("submit", async (event) => {
+  if (!nickname) {
+    showView("login");
+    return;
+  }
+
+  if (WS_URL.includes("SEU-SERVICO")) {
+    showView("login");
+    showLoginError(
+      "Configure WS_URL no app.js com a URL WebSocket do seu serviço Render."
+    );
+    return;
+  }
+
+  if (!/^wss?:\/\//i.test(WS_URL)) {
+    showView("login");
+    showLoginError("A URL do servidor WebSocket é inválida.");
+    return;
+  }
+
+  if (!("WebSocket" in window)) {
+    showView("login");
+    showLoginError("Este navegador não suporta WebSocket.");
+    return;
+  }
+
+  setConnection(false, "Conectando ao servidor...");
+
+  try {
+    const currentSocket = new WebSocket(WS_URL);
+    socket = currentSocket;
+
+    currentSocket.addEventListener("open", () => {
+      if (socket !== currentSocket) return;
+
+      connectionAttempts = 0;
+      setConnection(true, "Conectado");
+      addSystemMessage("Conexão estabelecida.");
+
+      currentSocket.send(
+        JSON.stringify({
+          type: "join",
+          nickname: nickname
+        })
+      );
+
+      if (messageInput) messageInput.focus();
+    });
+
+    currentSocket.addEventListener("message", (event) => {
+      if (socket !== currentSocket) return;
+      handleServerMessage(event);
+    });
+
+    currentSocket.addEventListener("error", () => {
+      if (socket !== currentSocket) return;
+      setConnection(false, "Problema de conexão");
+    });
+
+    currentSocket.addEventListener("close", () => {
+      if (socket !== currentSocket) return;
+
+      socket = null;
+      setConnection(false, "Desconectado");
+
+      if (manuallyDisconnected) return;
+
+      addSystemMessage("A conexão foi encerrada.");
+
+      /*
+       * Reconexão automática com espera progressiva.
+       * Não tenta reconectar indefinidamente com intervalos curtos.
+       */
+      if (nickname && chatView?.classList.contains("active")) {
+        scheduleReconnect();
+      }
+    });
+  } catch {
+    socket = null;
+    setConnection(false, "Falha na conexão");
+    addSystemMessage("Não foi possível iniciar a conexão WebSocket.");
+    scheduleReconnect();
+  }
+}
+
+/* Agenda uma tentativa de reconexão. */
+function scheduleReconnect() {
+  if (manuallyDisconnected || !nickname || reconnectTimer !== null) {
+    return;
+  }
+
+  connectionAttempts += 1;
+
+  const delay = Math.min(
+    1000 * Math.pow(2, connectionAttempts - 1),
+    30000
+  );
+
+  setConnection(false, "Reconectando em alguns segundos...");
+
+  reconnectTimer = setTimeout(() => {
+    reconnectTimer = null;
+
+    if (
+      !manuallyDisconnected &&
+      nickname &&
+      chatView?.classList.contains("active")
+    ) {
+      connectChat();
+    }
+  }, delay);
+}
+
+/* Valida o apelido e entra no chat. */
+loginForm?.addEventListener("submit", (event) => {
   event.preventDefault();
 
-  if (entering) return;
+  const value = nicknameInput.value.trim();
 
-  authError.textContent = "";
-
-  if (configIsMissing()) {
-    authError.textContent =
-      "Confira a configuração do arquivo firebase-config.js.";
-
-    return;
-  }
-
-  const name = displayName.value.trim();
-
-  if (!validName(name)) {
-    authError.textContent =
-      "Digite um nome entre 2 e 32 caracteres.";
-
-    return;
-  }
-
-  entering = true;
-  submitAuth.disabled = true;
-  submitAuth.textContent = "Conectando…";
-
-  try {
-    let user = auth.currentUser;
-
-    if (!user) {
-      const credential = await signInAnonymously(auth);
-      user = credential.user;
-    }
-
-    await updateProfile(user, {
-      displayName: name
-    });
-
-    saveName(name);
-
-    showChat(user);
-  } catch (error) {
-    authError.textContent = friendlyError(error);
-  } finally {
-    entering = false;
-
-    if (!auth.currentUser) {
-      submitAuth.disabled = false;
-      submitAuth.innerHTML =
-        'Entrar no chat <span>→</span>';
-    }
-  }
-});
-
-// ======================================================
-// SAIR DO CHAT
-// ======================================================
-
-$("logoutBtn").addEventListener("click", async () => {
-  try {
-    stopMessageListener();
-
-    clearSavedName();
-
-    if (displayName) {
-      displayName.value = "";
-    }
-
-    await signOut(auth);
-
-    showToast("Você saiu da conversa.");
-
-  } catch (error) {
-    showToast(friendlyError(error));
-  }
-});
-
-// ======================================================
-// CONTADOR DE CARACTERES
-// ======================================================
-
-messageInput.addEventListener("input", () => {
-  charCount.textContent =
-    `${messageInput.value.length}/1000`;
-});
-
-// ======================================================
-// ENTER PARA ENVIAR MENSAGEM
-// ======================================================
-
-messageInput.addEventListener("keydown", (event) => {
   if (
-    event.key === "Enter" &&
-    !event.shiftKey &&
-    !event.isComposing
+    value.length < MIN_NICKNAME_LENGTH ||
+    value.length > MAX_NICKNAME_LENGTH
   ) {
-    event.preventDefault();
-    messageForm.requestSubmit();
+    showLoginError(
+      `O apelido precisa ter entre ${MIN_NICKNAME_LENGTH} e ${MAX_NICKNAME_LENGTH} caracteres.`
+    );
+    return;
   }
+
+  if (loginError) {
+    loginError.textContent = "";
+    loginError.style.display = "none";
+  }
+
+  nickname = value;
+  manuallyDisconnected = false;
+  connectionAttempts = 0;
+
+  messages?.replaceChildren();
+
+  showView("chat");
+  connectChat();
 });
 
-// ======================================================
-// DICA DE SEGURANÇA
-// ======================================================
-
-$("tipBtn").addEventListener("click", () => {
-  showToast(
-    "Não compartilhe senhas, documentos ou dados privados."
-  );
-});
-
-// ======================================================
-// ENVIAR MENSAGEM
-// ======================================================
-
-messageForm.addEventListener("submit", async (event) => {
+/* Envia uma mensagem apenas quando conectado. */
+messageForm?.addEventListener("submit", (event) => {
   event.preventDefault();
 
   const text = messageInput.value.trim();
-  const user = auth?.currentUser;
 
-  if (!text || !user) return;
+  if (!text) return;
 
-  if (text.length > 1000) {
-    showToast("A mensagem ultrapassou o limite.");
+  if (text.length > MAX_MESSAGE_LENGTH) {
+    addSystemMessage("A mensagem ultrapassa o limite permitido.");
     return;
   }
 
-  if (user.uid !== activeUid) {
-    showToast("Sua sessão mudou. Entre novamente.");
+  if (
+    !connected ||
+    !socket ||
+    socket.readyState !== WebSocket.OPEN
+  ) {
+    addSystemMessage("Você está desconectado. Aguarde a reconexão.");
     return;
   }
-
-  messageInput.disabled = true;
 
   try {
-    const name =
-      (user.displayName || getSavedName() || "Usuário")
-        .trim()
-        .slice(0, 32);
-
-    await addDoc(collection(db, "messages"), {
-      text,
-      uid: user.uid,
-      name,
-      createdAt: serverTimestamp()
-    });
+    socket.send(
+      JSON.stringify({
+        type: "message",
+        nickname: nickname,
+        text: text
+      })
+    );
 
     messageInput.value = "";
-    charCount.textContent = "0/1000";
     messageInput.focus();
-
-  } catch (error) {
-    showToast(friendlyError(error));
-  } finally {
-    messageInput.disabled = false;
+  } catch {
+    setConnection(false, "Falha ao enviar");
+    addSystemMessage("Não foi possível enviar a mensagem.");
   }
 });
 
-// ======================================================
-// INICIALIZAÇÃO DO ANON CHAT
-// ======================================================
+/* Sai do chat e apaga o estado local do apelido. */
+leaveButton?.addEventListener("click", () => {
+  manuallyDisconnected = true;
+  nickname = "";
+  connectionAttempts = 0;
 
-if (configIsMissing()) {
-  authError.textContent =
-    "Configuração pendente: confira firebase-config.js.";
+  closeSocket();
 
-  submitAuth.disabled = true;
+  if (nicknameInput) nicknameInput.value = "";
+  if (messageInput) messageInput.value = "";
 
-} else {
-  try {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
+  if (messages) messages.replaceChildren();
 
-    onAuthStateChanged(auth, async (user) => {
-      if (!user) {
-        showLogin();
-        return;
-      }
+  setConnection(false, "Desconectado");
+  showView("login");
+});
 
-      const savedName = getSavedName();
+/* Fecha a conexão quando a página é encerrada. */
+window.addEventListener("pagehide", () => {
+  manuallyDisconnected = true;
+  closeSocket();
+});
 
-      if (user.isAnonymous && savedName) {
-        try {
-          if (user.displayName !== savedName) {
-            await updateProfile(user, {
-              displayName: savedName
-            });
-          }
-
-          showChat(user);
-        } catch (error) {
-          showToast(friendlyError(error));
-          showLogin();
-        }
-      } else {
-        showLogin();
-      }
-    });
-
-  } catch (error) {
-    authError.textContent =
-      "Falha ao iniciar Firebase: " + friendlyError(error);
-
-    submitAuth.disabled = true;
-  }
-}
+/* Estado inicial da interface. */
+setConnection(false, "Aguardando conexão");
+showView("login");
+```
