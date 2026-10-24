@@ -1,9 +1,6 @@
-// 1. Crie um projeto em https://console.firebase.google.com/
-// 2. Adicione um app Web e copie os dados de configuração para este arquivo.
-// 3. Estes campos são identificadores públicos do app; a segurança depende das regras
-//    do Firestore e da configuração de Authentication, não de esconder este arquivo.
+
 export const firebaseConfig = {
-  aapiKey: "AIzaSyDAKZqjvdBLW_FyIcRHHdiGfVLe_btf4q8",
+  apiKey: "AIzaSyDAKZqjvdBLW_FyIcRHHdiGfVLe_btf4q8",
   authDomain: "misterio-be0c2.firebaseapp.com",
   projectId: "misterio-be0c2",
   storageBucket: "misterio-be0c2.firebasestorage.app",
