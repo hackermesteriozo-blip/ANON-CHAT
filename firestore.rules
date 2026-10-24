@@ -1,0 +1,25 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /messages/{messageId} {
+      // Somente usuários autenticados podem ler o chat.
+      allow read: if request.auth != null;
+
+      // O remetente só pode gravar mensagens com seu próprio UID.
+      allow create: if request.auth != null
+        && request.resource.data.keys().hasOnly(['text', 'uid', 'name', 'createdAt'])
+        && request.resource.data.keys().hasAll(['text', 'uid', 'name', 'createdAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 1000
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 1
+        && request.resource.data.name.size() <= 32
+        && request.resource.data.createdAt == request.time;
+
+      // Mensagens publicadas não podem ser alteradas ou apagadas pelo cliente.
+      allow update, delete: if false;
+    }
+  }
+}
